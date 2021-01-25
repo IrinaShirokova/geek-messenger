@@ -14,7 +14,7 @@ module.exports = {
    module: {
     rules: [
         {
-            test: /\.(js|jsx)$/,
+            test: /\.(js|jsx|sass|scss|json)$/,
             include: path.resolve(__dirname, "src"),
             loader: 'babel-loader',
             exclude: /node_modules/,
@@ -30,10 +30,14 @@ module.exports = {
                         ]
             }
         },
+        {
+            test: /\.css$/,
+            loader: 'style-loader!css-loader',
+        },
     ],
     },
     resolve: {
         modules: [`${__dirname}/src`, 'node_modules'],
-        extensions: ['.js', '.jsx'],
+        extensions: ['.js', '.jsx', ',.scss', '.sass', '.json'],
      },
 };
