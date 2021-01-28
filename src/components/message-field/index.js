@@ -18,74 +18,104 @@ const useStyles = makeStyles({
         "overflow-y": "scroll",
         display: "flex",
         "flex-direction": "column"
+    },
+    messageFieldBlock: {
+        marginTop: "20px",
+        width: "100%",
+        display: "flex",
+        "flex-direction": "row",
+        justifyItems: "space-beetween"
     }
   });
 
   const defaultState = {
-    messages: [],
-    input: ''
+    messages: {},
+    input: '',
+    chats: {
+        1: {title: 'Чат 1', messageList: []},
+        2: {title: 'Чат 2', messageList: []},
+        3: {title: 'Чат 3', messageList: []},
+    },
   };
 
-export const MessageField = (props) => {
+export const MessageField = ({chatId}) => {
     const [state, setState] = useState(defaultState);
-    const {messages, input} = state;
+    const {messages, input, chats} = state;
     let textInput = React.createRef();
     const classes = useStyles();
 
     useEffect(() => {
         textInput.current.focus();
-        if (messages && messages.length > 0 && messages[messages.length - 1].sender === 'me') {
+        const messageId = Object.keys(messages).length > 0 ? Object.keys(messages).length : -1;
+        if (messages[messageId] && messages[messageId].sender === 'me') {
             setTimeout(() =>
             {
                 sendMessage('Не приставай ко мне, я робот!', 'bot');
             }, 1000);
         }
-    },[state]);
+    },[messages, chats]);
   
-    const handleSendClick = (message) => {
+    const handleSendClick = useCallback((message) => {
         sendMessage(message, 'me');
-    };
+    },[state]);
   
     const handleInputChange = (event) => {
         setState({...state, [event.target.name] : event.target.value});
     }
   
-    const handleInputKeyUp = (event, message) => {
+    const handleInputKeyUp = useCallback((event, message) => {
         if (event.keyCode === 13) { // Enter
             sendMessage(message, 'me');
         }
-    };
+    }, [state]);
   
     const sendMessage = (message, sender) => {
-        let newMessage = {
-            text: message, 
-            sender: sender,
-            date: new Date()
-        };
-        setState({ 
-            messages: [ ...messages, newMessage ],
-            input: ''
-        });
-        console.log('123456');
+            const messageId = Object.keys(messages).length + 1;
+            let newMessage = {
+                text: message, 
+                sender: sender,
+                date: new Date()
+            };
+
+            let currentChat = chats[chatId];
+            let currentMessageList = currentChat.messageList;
+
+            let newChats = {...chats,
+                [chatId]: { 
+                    ...currentChat,
+                    messageList: [...currentMessageList, messageId]
+                }
+            };
+
+            let newState = {
+                input: sender === 'me' ? '' : input,
+                messages: {...messages, [messageId]: newMessage},
+                chats: newChats
+            };            
+            setState(newState); 
     };
     
 return <div className={classes.root}>
             <div className={classes.messagesView}>    
-                {messages && messages.map((item, idx) => 
-                <MessageItem key={`msg-item-${idx}`} text={item.text} sender={item.sender}/>)}
+                {chats[chatId] && chats[chatId].messageList && chats[chatId].messageList.map((msgId, idx) => 
+                messages[msgId] && <MessageItem key={`msg-item-${idx}`} 
+                            text={messages[msgId].text} 
+                            sender={messages[msgId].sender}/>)}
             </div>
-            <TextField
-                name="input"
-                ref={ textInput }
-                fullWidth={ true }
-                hintText="Введите сообщение"
-                onChange={ handleInputChange }
-                value={ input }
-                onKeyUp={ (event) => handleInputKeyUp(event, input) }
-            />
-            <FloatingActionButton onClick={ () => handleSendClick(input) }>
-                <SendIcon />
-            </FloatingActionButton>
+            <div className={classes.messageFieldBlock}>
+                <TextField
+                    name="input"
+                    ref={ textInput }
+                    fullWidth={ true }
+                    hintText="Введите сообщение"
+                    onChange={ handleInputChange }
+                    value={ input }
+                    onKeyUp={ (event) => handleInputKeyUp(event, input) }
+                />
+                <FloatingActionButton onClick={ () => handleSendClick(input) }>
+                    <SendIcon />
+                </FloatingActionButton>
+            </div>
         </div>
  };
 

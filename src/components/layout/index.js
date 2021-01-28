@@ -3,6 +3,10 @@ import Header from '../header';
 import { makeStyles } from '@material-ui/core/styles';
 import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
+import MessageField from '../message-field';
+import ChatList from '../chat-list';
+import EmptyPage from '../empty-page';
+import { withRouter } from "react-router-dom";
 
 const useStyles = makeStyles({
     root: {
@@ -27,21 +31,22 @@ const useStyles = makeStyles({
       },
   });
 
-export const Layout = ({chatlist, currentchat}) => {
+export const Layout = ({match,history}) => {
+    const { id } = match.params;
     const classes = useStyles();
     return (
         <div className={classes.root}>
-            <Header/>
+            <Header chatId={id}/>
             <div className={classes.chatContainer}>
             <Grid container spacing={2}>
                 <Grid item xs={4}>
                     <Paper className={classes.paper}>
-                        {chatlist}
+                        <ChatList/>
                     </Paper>
                 </Grid>
                 <Grid item xs={8}>
                     <Paper className={classes.paper}>
-                        {currentchat}
+                        {id ? <MessageField chatId={id}/> : <EmptyPage/>}
                     </Paper>
                 </Grid>
              </Grid>                
@@ -50,4 +55,4 @@ export const Layout = ({chatlist, currentchat}) => {
     )
 }
 
-export default Layout;
+export default withRouter(Layout);
