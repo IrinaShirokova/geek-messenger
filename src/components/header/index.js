@@ -1,6 +1,7 @@
 import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
-import CommentIcon from '@material-ui/icons/Comment';
+import PetsIcon from '@material-ui/icons/Pets';
+import Chip from '@material-ui/core/Chip';
 
 const useStyles = makeStyles({
     root: {
@@ -10,7 +11,8 @@ const useStyles = makeStyles({
       color: 'white',
       height: 48,
       padding: '10px 30px',
-      width: "100%"
+      width: "100%",
+      zIndex: 1000
     },
   });
 
@@ -18,7 +20,11 @@ export const Header = (props) => {
     const classes = useStyles();
     return (
         <div className={classes.root}>
-            <CommentIcon/> GEEK CHAT
+          <Chip
+            icon={<PetsIcon />}
+            label={`GEEK CHAT # ${props.chatId}`}
+            color="secondary"
+          />
         </div>
     )
 }

@@ -1,13 +1,13 @@
 import React from 'react';
-import MessageField from './components/message-field';
-import ChatList from './components/chat-list';
-import Layout from './components/layout';
+
+import Router from './components/router';
+import { BrowserRouter } from 'react-router-dom';
 
 export const App = (props) => { 
 
-  return <Layout chatlist={<ChatList/>}
-                currentchat={<MessageField/>}>    
-  </Layout>;
+  return <BrowserRouter>
+      <Router/>
+  </BrowserRouter>
 }
 
 export default App;
