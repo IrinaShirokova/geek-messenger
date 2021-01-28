@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState, useEffect } from 'react';
 import Header from '../header';
 import { makeStyles } from '@material-ui/core/styles';
 import Paper from '@material-ui/core/Paper';
@@ -7,6 +7,10 @@ import MessageField from '../message-field';
 import ChatList from '../chat-list';
 import EmptyPage from '../empty-page';
 import { withRouter } from "react-router-dom";
+import PropTypes from "prop-types";
+import {bindActionCreators} from "redux";
+import connect from "react-redux/es/connect/connect";
+import { sendMessage } from "../../actions/message-actions";
 
 const useStyles = makeStyles({
     root: {
@@ -31,12 +35,35 @@ const useStyles = makeStyles({
       },
   });
 
-export const Layout = ({match,history}) => {
-    const { id } = match.params;
+const defaultState = {
+    messages: {},
+    chats: {}
+  };
+
+export const Layout = ({match}) => {
+    const { chatId } = match.params;
     const classes = useStyles();
+    const [state, setState] = useState(defaultState);
+    const { messages, chats } = state;
+
+    useEffect(() => {
+        const messageId = messages && Object.keys(messages).length > 0 ? Object.keys(messages).length : -1;
+        if (messageId !== -1 && messages[messageId] && messages[messageId].sender === 'me') {
+            setTimeout(() =>
+            {
+                sendMessage(messageId, 'Не приставай ко мне, я робот!', 'bot', chatId);
+            }, 1000);
+        }
+    },[messages, chats]);
+
+    const onSendMessage = (message, sender) => { 
+        const messageId = Object.keys(messages).length + 1;
+        sendMessage(messageId, message, sender, chatId);
+    };
+
     return (
         <div className={classes.root}>
-            <Header chatId={id}/>
+            <Header chatId={chatId}/>
             <div className={classes.chatContainer}>
             <Grid container spacing={2}>
                 <Grid item xs={4}>
@@ -46,7 +73,9 @@ export const Layout = ({match,history}) => {
                 </Grid>
                 <Grid item xs={8}>
                     <Paper className={classes.paper}>
-                        {id ? <MessageField chatId={id}/> : <EmptyPage/>}
+                        {chatId ? <MessageField  chatId={chatId}
+                           messages={messages}
+                           onSendMessage={onSendMessage}/> : <EmptyPage/>}
                     </Paper>
                 </Grid>
              </Grid>                
@@ -55,4 +84,12 @@ export const Layout = ({match,history}) => {
     )
 }
 
-export default withRouter(Layout);
+Layout.propTypes = {
+    chatId: PropTypes.number
+};
+
+const mapStateToProps = ({}) => ({});
+
+const mapDispatchToProps = dispatch => bindActionCreators({ sendMessage }, dispatch);
+
+export default connect(mapStateToProps, mapDispatchToProps)(withRouter(Layout));
