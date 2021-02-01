@@ -3,6 +3,9 @@ import { TextField, FloatingActionButton } from 'material-ui';
 import SendIcon from 'material-ui/svg-icons/content/send';
 import { makeStyles } from '@material-ui/core/styles';
 import MessageItem from '../message-item';
+import PropTypes from 'prop-types';
+import { bindActionCreators } from "redux";
+import connect from "react-redux/es/connect/connect";
 
 const useStyles = makeStyles({
     root: {
@@ -29,76 +32,40 @@ const useStyles = makeStyles({
   });
 
   const defaultState = {
-    messages: {},
-    input: '',
-    chats: {
-        1: {title: 'Чат 1', messageList: []},
-        2: {title: 'Чат 2', messageList: []},
-        3: {title: 'Чат 3', messageList: []},
-    },
+    input: ''
   };
 
-export const MessageField = ({chatId}) => {
+export const MessageField = ({chatId, messages, chats, onSendMessage}) => {
     const [state, setState] = useState(defaultState);
-    const {messages, input, chats} = state;
+    const {input} = state;
     let textInput = React.createRef();
     const classes = useStyles();
 
     useEffect(() => {
         textInput.current.focus();
-        const messageId = Object.keys(messages).length > 0 ? Object.keys(messages).length : -1;
-        if (messages[messageId] && messages[messageId].sender === 'me') {
-            setTimeout(() =>
-            {
-                sendMessage('Не приставай ко мне, я робот!', 'bot');
-            }, 1000);
-        }
     },[messages, chats]);
   
-    const handleSendClick = useCallback((message) => {
-        sendMessage(message, 'me');
+    const handleSendClick = useCallback((message, sender) => {
+        onSendMessage(message, sender);
+        if (sender === 'me') {
+            setState({ input: '' });
+        }
     },[state]);
   
     const handleInputChange = (event) => {
-        setState({...state, [event.target.name] : event.target.value});
+        setState({[event.target.name] : event.target.value});
     }
   
-    const handleInputKeyUp = useCallback((event, message) => {
+    const handleInputKeyUp = (event) => {
         if (event.keyCode === 13) { // Enter
-            sendMessage(message, 'me');
+            handleSendClick(input, 'me');
         }
-    }, [state]);
-  
-    const sendMessage = (message, sender) => {
-            const messageId = Object.keys(messages).length + 1;
-            let newMessage = {
-                text: message, 
-                sender: sender,
-                date: new Date()
-            };
-
-            let currentChat = chats[chatId];
-            let currentMessageList = currentChat.messageList;
-
-            let newChats = {...chats,
-                [chatId]: { 
-                    ...currentChat,
-                    messageList: [...currentMessageList, messageId]
-                }
-            };
-
-            let newState = {
-                input: sender === 'me' ? '' : input,
-                messages: {...messages, [messageId]: newMessage},
-                chats: newChats
-            };            
-            setState(newState); 
     };
     
 return <div className={classes.root}>
             <div className={classes.messagesView}>    
-                {chats[chatId] && chats[chatId].messageList && chats[chatId].messageList.map((msgId, idx) => 
-                messages[msgId] && <MessageItem key={`msg-item-${idx}`} 
+                {chats && chats[chatId] && chats[chatId].messageList && chats[chatId].messageList.map((msgId, idx) => 
+                messages && messages[msgId] && <MessageItem key={`msg-item-${idx}`} 
                             text={messages[msgId].text} 
                             sender={messages[msgId].sender}/>)}
             </div>
@@ -110,13 +77,27 @@ return <div className={classes.root}>
                     hintText="Введите сообщение"
                     onChange={ handleInputChange }
                     value={ input }
-                    onKeyUp={ (event) => handleInputKeyUp(event, input) }
+                    onKeyUp={ (event) => handleInputKeyUp(event) }
                 />
-                <FloatingActionButton onClick={ () => handleSendClick(input) }>
+                <FloatingActionButton onClick={ () => handleSendClick(input, 'me') }>
                     <SendIcon />
                 </FloatingActionButton>
             </div>
         </div>
  };
 
- export default MessageField;
+ MessageField.propTypes = {
+    chatId: PropTypes.number.isRequired,
+    messages: PropTypes.object,
+    chats: PropTypes.object,
+    onSendMessage: PropTypes.func.isRequired,
+};
+
+const mapStateToProps = ({ chatReducer }) => ({
+    chats: chatReducer.chats,
+    messages: chatReducer.messages,
+ });
+ 
+ const mapDispatchToProps = dispatch => bindActionCreators({}, dispatch);
+
+ export default connect(mapStateToProps, mapDispatchToProps)(MessageField);
