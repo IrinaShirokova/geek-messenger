@@ -35,30 +35,25 @@ const useStyles = makeStyles({
       },
   });
 
-const defaultState = {
-    messages: {},
-    chats: {}
-  };
-
-export const Layout = ({match}) => {
-    const { chatId } = match.params;
+export const Layout = (props) => {
+    const { chatId } = props.match.params;
     const classes = useStyles();
-    const [state, setState] = useState(defaultState);
-    const { messages, chats } = state;
 
     useEffect(() => {
-        const messageId = messages && Object.keys(messages).length > 0 ? Object.keys(messages).length : -1;
-        if (messageId !== -1 && messages[messageId] && messages[messageId].sender === 'me') {
+        let msgs = props.messages;
+        const messageId = msgs && Object.keys(msgs).length > 0 ? Object.keys(msgs).length : -1;
+        if (messageId !== -1 && msgs[messageId] && msgs[messageId].sender === 'me') {
             setTimeout(() =>
             {
-                sendMessage(messageId, 'Не приставай ко мне, я робот!', 'bot', chatId);
+                const newMessageId = Object.keys(props.messages).length + 1;
+                props.sendMessage(newMessageId, 'Не приставай ко мне, я робот!', 'bot', chatId);
             }, 1000);
         }
-    },[messages, chats]);
+    },[props.messages]);
 
     const onSendMessage = (message, sender) => { 
-        const messageId = Object.keys(messages).length + 1;
-        sendMessage(messageId, message, sender, chatId);
+        const messageId = Object.keys(props.messages).length + 1;
+        props.sendMessage(messageId, message, sender, chatId);
     };
 
     return (
@@ -74,7 +69,6 @@ export const Layout = ({match}) => {
                 <Grid item xs={8}>
                     <Paper className={classes.paper}>
                         {chatId ? <MessageField  chatId={chatId}
-                           messages={messages}
                            onSendMessage={onSendMessage}/> : <EmptyPage/>}
                     </Paper>
                 </Grid>
@@ -88,7 +82,9 @@ Layout.propTypes = {
     chatId: PropTypes.number
 };
 
-const mapStateToProps = ({}) => ({});
+const mapStateToProps = ({ chatReducer }) => ({
+    messages: chatReducer.messages,
+ });
 
 const mapDispatchToProps = dispatch => bindActionCreators({ sendMessage }, dispatch);
 

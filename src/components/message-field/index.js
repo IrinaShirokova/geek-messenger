@@ -42,10 +42,6 @@ export const MessageField = ({chatId, messages, chats, onSendMessage}) => {
     const classes = useStyles();
 
     useEffect(() => {
-        console.log(chatId);
-    },[chatId]);
-
-    useEffect(() => {
         textInput.current.focus();
     },[messages, chats]);
   
@@ -99,6 +95,7 @@ return <div className={classes.root}>
 
 const mapStateToProps = ({ chatReducer }) => ({
     chats: chatReducer.chats,
+    messages: chatReducer.messages,
  });
  
  const mapDispatchToProps = dispatch => bindActionCreators({}, dispatch);

@@ -21,14 +21,12 @@ export default function chatReducer(store = initialStore, action) {
        case SEND_MESSAGE: {
            return update(store, {
                chats: { $merge: { [action.chatId]: {
-                   title: store.chats[action.chatId].title,
+                   ...store.chats[action.chatId],
                    messageList: [...store.chats[action.chatId].messageList, action.messageId]
                } } },
-               messages: {$merge: {
-                [action.messageId]: {
-                    text: store.messages[action.messageId].message, 
-                    sender: store.messages[action.messageId].sender,
-                    date: new Date()
+               messages: {$merge: { [action.messageId]: {
+                    text: action.text, 
+                    sender: action.sender
                 }}},
            });
        }
