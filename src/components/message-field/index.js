@@ -2,10 +2,12 @@ import React, {useState, useEffect, useCallback} from 'react';
 import { TextField, FloatingActionButton } from 'material-ui';
 import SendIcon from 'material-ui/svg-icons/content/send';
 import { makeStyles } from '@material-ui/core/styles';
-import MessageItem from '../message-item';
 import PropTypes from 'prop-types';
 import { bindActionCreators } from "redux";
 import connect from "react-redux/es/connect/connect";
+import MessageItem from '../message-item';
+import {changeChatAttention} from '../../actions/chat-actions';
+import {getChatMessages} from '../../utils/selectors';
 
 const useStyles = makeStyles({
     root: {
@@ -35,7 +37,9 @@ const useStyles = makeStyles({
     input: ''
   };
 
-export const MessageField = ({chatId, messages, chats, onSendMessage}) => {
+export const MessageField = ({chatId, messages, chats, 
+        onSendMessage, onRemoveMessage,
+        changeChatAttention}) => {
     const [state, setState] = useState(defaultState);
     const {input} = state;
     let textInput = React.createRef();
@@ -43,7 +47,10 @@ export const MessageField = ({chatId, messages, chats, onSendMessage}) => {
 
     useEffect(() => {
         textInput.current.focus();
-    },[messages, chats]);
+        if (chats && chats[chatId] && chats[chatId].attention) {
+            changeChatAttention(chatId, false);
+        }
+    },[messages, chats, chatId]);
   
     const handleSendClick = useCallback((message, sender) => {
         onSendMessage(message, sender);
@@ -61,13 +68,19 @@ export const MessageField = ({chatId, messages, chats, onSendMessage}) => {
             handleSendClick(input, 'me');
         }
     };
+
+    const handleRemoveMessageClick = useCallback((messageId) => {
+        onRemoveMessage(messageId,chatId);
+    },[messages, chats]);
     
 return <div className={classes.root}>
             <div className={classes.messagesView}>    
                 {chats && chats[chatId] && chats[chatId].messageList && chats[chatId].messageList.map((msgId, idx) => 
-                messages && messages[msgId] && <MessageItem key={`msg-item-${idx}`} 
-                            text={messages[msgId].text} 
-                            sender={messages[msgId].sender}/>)}
+                    messages && messages[msgId] && 
+                    <MessageItem key={`msg-item-${idx}`} 
+                        RemoveMessage={() => handleRemoveMessageClick(msgId)}
+                        text={messages[msgId].text} 
+                        sender={messages[msgId].sender}/>)}
             </div>
             <div className={classes.messageFieldBlock}>
                 <TextField
@@ -98,6 +111,6 @@ const mapStateToProps = ({ chatReducer }) => ({
     messages: chatReducer.messages,
  });
  
- const mapDispatchToProps = dispatch => bindActionCreators({}, dispatch);
+ const mapDispatchToProps = dispatch => bindActionCreators({changeChatAttention}, dispatch);
 
  export default connect(mapStateToProps, mapDispatchToProps)(MessageField);
