@@ -9,6 +9,14 @@ import PropTypes from 'prop-types';
 import {bindActionCreators} from "redux";
 import connect from "react-redux/es/connect/connect";
 import {addChat} from '../../actions/chat-actions';
+import NotificationsActiveIcon from '@material-ui/icons/NotificationsActive';
+import Menu from '@material-ui/core/Menu';
+import MenuItem from '@material-ui/core/MenuItem';
+
+const initialState = {
+    mouseX: null,
+    mouseY: null,
+    };
 
 const useStyles = makeStyles({
     root: {
@@ -23,11 +31,14 @@ const useStyles = makeStyles({
   });
 
   const defaultState = {
-    input: ''
+    input: '',
+    mouseX: null,
+    mouseY: null,
   };
 
-export const ChatList = ({chats, addChat}) => {
+export const ChatList = ({chats, addChat, RemoveChat}) => {
     const [state, setState] = React.useState(defaultState);
+    const [stateMenu, setStateMenu] = React.useState(initialState);
     const classes = useStyles();
 
     const handleChange = useCallback((event) => {
@@ -47,13 +58,43 @@ export const ChatList = ({chats, addChat}) => {
         }
     },[state]);
 
+    const handleClick = (event) => {
+        event.preventDefault();
+        setStateMenu({
+            mouseX: event.clientX - 2,
+            mouseY: event.clientY - 4,
+        });
+    };
+
+    const handleClose = () => {
+        setStateMenu(initialState);
+    };
+
+    const handleConfirm = (chatId) => {
+        RemoveChat(chatId);
+        setStateMenu(initialState);
+    };
+
     return <List className={classes.root}>
         {chats && Object.keys(chats).map((chatId,idx) =>
         <Link key={`chat-${idx}`} to={`/chat/${chatId}`}>
-            <ListItem 
-                   primaryText={ chats[chatId].title }
-                   leftIcon={ <ContentSend /> }>
+            <ListItem primaryText={ chats[chatId].title }
+                   leftIcon={ <ContentSend /> }
+                   onContextMenu={handleClick}
+                   rightIcon={ chats[chatId].attention ? <NotificationsActiveIcon fontSize={"small"} color={"secondary"}/> : null}>
             </ListItem>
+            <Menu
+                keepMounted
+                open={stateMenu.mouseY !== null}
+                onClose={handleClose}
+                anchorReference="anchorPosition"
+                anchorPosition={
+                    stateMenu.mouseY !== null && stateMenu.mouseX !== null
+                    ? { top: stateMenu.mouseY, left: stateMenu.mouseX }
+                    : undefined
+                }>
+                    <MenuItem onClick={() => handleConfirm(chatId)}>Удалить</MenuItem>
+                </Menu>
         </Link>)}
         <ListItem
                    key="Add new chat"
@@ -75,7 +116,8 @@ export const ChatList = ({chats, addChat}) => {
 
 ChatList.propTypes = {
     chats: PropTypes.object.isRequired,        
-    addChat: PropTypes.func.isRequired
+    addChat: PropTypes.func.isRequired,
+    push: PropTypes.func.isRequired,
  };
 
  const mapStateToProps = ({ chatReducer }) => ({

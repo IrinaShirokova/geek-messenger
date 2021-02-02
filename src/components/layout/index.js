@@ -1,4 +1,4 @@
-import React, {useState, useEffect } from 'react';
+import React, {useCallback } from 'react';
 import Header from '../header';
 import { makeStyles } from '@material-ui/core/styles';
 import Paper from '@material-ui/core/Paper';
@@ -7,10 +7,10 @@ import MessageField from '../message-field';
 import ChatList from '../chat-list';
 import EmptyPage from '../empty-page';
 import { withRouter } from "react-router-dom";
-import PropTypes from "prop-types";
 import {bindActionCreators} from "redux";
 import connect from "react-redux/es/connect/connect";
-import { sendMessage } from "../../actions/message-actions";
+import { sendMessage, removeMessage } from "../../actions/message-actions";
+import { removeChat } from "../../actions/chat-actions";
 
 const useStyles = makeStyles({
     root: {
@@ -35,26 +35,21 @@ const useStyles = makeStyles({
       },
   });
 
-export const Layout = (props) => {
-    const { chatId } = props.match.params;
+export const Layout = ({match, sendMessage, removeMessage, removeChat}) => {
+    const { chatId } = match.params;
     const classes = useStyles();
 
-    useEffect(() => {
-        let msgs = props.messages;
-        const messageId = msgs && Object.keys(msgs).length > 0 ? Object.keys(msgs).length : -1;
-        if (messageId !== -1 && msgs[messageId] && msgs[messageId].sender === 'me') {
-            setTimeout(() =>
-            {
-                const newMessageId = Object.keys(props.messages).length + 1;
-                props.sendMessage(newMessageId, 'Не приставай ко мне, я робот!', 'bot', chatId);
-            }, 1000);
-        }
-    },[props.messages]);
+    const onSendMessage = useCallback((message, sender) => { 
+        sendMessage(message, sender, chatId);
+    },[]);
 
-    const onSendMessage = (message, sender) => { 
-        const messageId = Object.keys(props.messages).length + 1;
-        props.sendMessage(messageId, message, sender, chatId);
-    };
+    const onRemoveMessage = useCallback((messageId, chatId) => {
+        removeMessage(messageId, chatId);
+    },[]);
+
+    const onRemoveChat = useCallback((id) => {
+        removeChat(id);
+    },[]);
 
     return (
         <div className={classes.root}>
@@ -63,13 +58,14 @@ export const Layout = (props) => {
             <Grid container spacing={2}>
                 <Grid item xs={4}>
                     <Paper className={classes.paper}>
-                        <ChatList/>
+                        <ChatList RemoveChat={onRemoveChat}/>
                     </Paper>
                 </Grid>
                 <Grid item xs={8}>
                     <Paper className={classes.paper}>
                         {chatId ? <MessageField  chatId={chatId}
-                           onSendMessage={onSendMessage}/> : <EmptyPage/>}
+                           onSendMessage={onSendMessage}
+                           onRemoveMessage={onRemoveMessage}/> : <EmptyPage/>}
                     </Paper>
                 </Grid>
              </Grid>                
@@ -78,14 +74,8 @@ export const Layout = (props) => {
     )
 }
 
-Layout.propTypes = {
-    chatId: PropTypes.number
-};
+const mapStateToProps = () => ({});
 
-const mapStateToProps = ({ chatReducer }) => ({
-    messages: chatReducer.messages,
- });
-
-const mapDispatchToProps = dispatch => bindActionCreators({ sendMessage }, dispatch);
+const mapDispatchToProps = dispatch => bindActionCreators({ sendMessage, removeMessage, removeChat }, dispatch);
 
 export default connect(mapStateToProps, mapDispatchToProps)(withRouter(Layout));
